@@ -1,0 +1,6 @@
+gitignore*
+
+!*/
+
+# Solo archivos Python y Markdown
+!rc.lua
