@@ -91,7 +91,11 @@ end
 -- Se mantienen como globales las que awful/otros módulos esperan encontrar
 -- en el scope global (terminal, modkey). Las demás se hacen locales.
 
-beautiful.init(gears.filesystem.get_themes_dir() .. "default/theme.lua")
+local theme_path = string.format("%s/.config/awesome/themes/%s/theme.lua",
+    os.getenv("HOME"), "vertex")
+beautiful.init(theme_path)
+
+local lain = require("lain")
 
 terminal   = "kitty"                              -- [global] requerido por menubar
 modkey     = "Mod4"                               -- [global] requerido por bindings
