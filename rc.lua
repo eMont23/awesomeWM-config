@@ -150,7 +150,7 @@ mymainmenu = awful.menu({
         { "open terminal",        terminal },
         { "System Monitor (btop)", "kitty --class btop -e btop" },
         { "Nemo",                 "nemo" },
-        { "Browser",              "brave" },
+        { "Browser",              "firefox" },
         { "vsCode",               "code" },
         { "Darktable",            "darktable" },
         { "Nitrogen",             "nitrogen" },
