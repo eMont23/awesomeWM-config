@@ -26,6 +26,7 @@
               -- [WIFI-WIDGET] y agregar wificon/rspace al wibar.
 
      [FIX-5]  Variable `space` declarada pero nunca usada. Eliminada.
+              Variable `lspace3` declarada pero nunca usada. Eliminada.
 
      [OPT-1]  Interfaz wifi extraída a variable de configuración WIFI_IFACE
               en la sección de ajustes al inicio del archivo. Cambiar aquí
@@ -43,8 +44,13 @@
               grandes recortan demasiado el área útil. 6px es un equilibrio
               visual sin sacrificar espacio.
 
-     [OPT-5]  Documentación de secciones con separadores claros para facilitar
-              mantenimiento futuro.
+     [OPT-5]  Tasklist cambiado a solo íconos:
+              · tasklist_plain_task_name = false  (necesario para mostrar ícono)
+              · tasklist_disable_icon    = false  (activa los íconos)
+              · filter cambiado a currenttags     (muestra todas las ventanas
+                del tag, no solo la activa — permite restaurar minimizadas)
+              · fg_normal/fg_focus en #00000000 (transparente) para ocultar
+                el texto y mostrar solo el ícono de cada app.
 
 --]]
 
@@ -66,7 +72,6 @@ local my_table = awful.util.table or gears.table
 -- =============================================================================
 -- AJUSTES DE USUARIO
 -- Todas las opciones que probablemente quieras cambiar están aquí arriba.
--- No hace falta buscar en el resto del archivo.
 -- =============================================================================
 
 -- [OPT-1] Nombre de la interfaz wifi.
@@ -76,9 +81,9 @@ local WIFI_IFACE = "wlan0"
 -- =============================================================================
 -- RUTAS BASE
 -- =============================================================================
-local theme       = {}
-local home        = os.getenv("HOME")
-local theme_dir   = home .. "/.config/awesome/themes/vertex"
+local theme     = {}
+local home      = os.getenv("HOME")
+local theme_dir = home .. "/.config/awesome/themes/vertex"
 
 theme.default_dir = require("awful.util").get_themes_dir() .. "default"
 theme.icon_dir    = theme_dir .. "/icons"
@@ -92,20 +97,19 @@ theme.taglist_font = "Font Awesome 5 Free Solid 13"
 -- =============================================================================
 -- COLORES
 -- =============================================================================
-theme.fg_normal  = "#FFFFFF"
-theme.fg_focus   = "#6A95EB"
-theme.fg_urgent  = "#CC9393"
+theme.fg_normal = "#FFFFFF"
+theme.fg_focus  = "#6A95EB"
+theme.fg_urgent = "#CC9393"
 
-theme.bg_normal  = "#242424"
-theme.bg_focus   = "#303030"
-theme.bg_focus2  = "#3762B8"
-theme.bg_urgent  = "#006B8E"
+theme.bg_normal = "#242424"
+theme.bg_focus  = "#303030"
+theme.bg_focus2 = "#3762B8"
+theme.bg_urgent = "#006B8E"
 
 -- =============================================================================
 -- BORDES Y GEOMETRÍA
 -- =============================================================================
--- [OPT-2] Reducido de dpi(4) a dpi(2): en 1366x768 los bordes gruesos
--- recortan espacio útil visible. 2px sigue siendo claramente visible.
+-- [OPT-2] Reducido de dpi(4) a dpi(2): menos invasivo en 1366x768.
 theme.border_width  = dpi(2)
 theme.border_normal = "#252525"
 theme.border_focus  = "#7CA2EE"
@@ -130,14 +134,37 @@ theme.tooltip_border_width = theme.border_width
 theme.wallpaper = theme_dir .. "/wall.png"
 
 -- =============================================================================
+-- TAGLIST
+-- =============================================================================
+theme.taglist_squares_sel   = gears.surface.load_from_shape(dpi(3), dpi(30), gears.shape.rectangle, theme.fg_focus)
+theme.taglist_squares_unsel = gears.surface.load_from_shape(dpi(3), dpi(30), gears.shape.rectangle, theme.bg_focus2)
+
+-- Nombres de tags — números simples.
+-- Para FontAwesome usar: { "", "", "", "", "", "", "", "", "" }
+awful.util.tagnames = { "1", "2", "3", "4", "5", "6", "7", "8", "9" }
+
+-- =============================================================================
+-- TASKLIST — SOLO ÍCONOS
+-- =============================================================================
+-- [OPT-5] plain_task_name = false es necesario para que el ícono se renderice.
+-- disable_icon = false activa los íconos de aplicación.
+-- El texto se oculta con fg transparente en el widget (ver s.mytasklist abajo).
+theme.tasklist_plain_task_name = false
+theme.tasklist_disable_icon    = false
+
+-- =============================================================================
+-- FONDO DE BARRA
+-- =============================================================================
+theme.panelbg = theme.icon_dir .. "/panel.png"
+
+-- =============================================================================
 -- ICONOS — AWESOME
 -- =============================================================================
 theme.awesome_icon = theme.icon_dir .. "/awesome.png"
 
 -- =============================================================================
 -- ICONOS — BATERÍA
--- Los nombres siguen el patrón bat{nivel}{estado} para indexación dinámica
--- en el widget de batería de abajo.
+-- Nombres siguen el patrón bat{nivel}{estado} para indexación dinámica.
 -- =============================================================================
 theme.bat000charging = theme.icon_dir .. "/bat-000-charging.png"
 theme.bat000         = theme.icon_dir .. "/bat-000.png"
@@ -168,12 +195,12 @@ theme.wifinone = theme.icon_dir .. "/wireless-none.png"
 -- =============================================================================
 -- ICONOS — VOLUMEN
 -- =============================================================================
-theme.volhigh        = theme.icon_dir .. "/volume-high.png"
-theme.vollow         = theme.icon_dir .. "/volume-low.png"
-theme.volmed         = theme.icon_dir .. "/volume-medium.png"
+theme.volhigh         = theme.icon_dir .. "/volume-high.png"
+theme.vollow          = theme.icon_dir .. "/volume-low.png"
+theme.volmed          = theme.icon_dir .. "/volume-medium.png"
 theme.volmutedblocked = theme.icon_dir .. "/volume-muted-blocked.png"
-theme.volmuted       = theme.icon_dir .. "/volume-muted.png"
-theme.voloff         = theme.icon_dir .. "/volume-off.png"
+theme.volmuted        = theme.icon_dir .. "/volume-muted.png"
+theme.voloff          = theme.icon_dir .. "/volume-off.png"
 
 -- =============================================================================
 -- ICONOS — LAYOUTS
@@ -197,8 +224,8 @@ theme.layout_cornerse   = theme.default_dir .. "/layouts/cornersew.png"
 
 -- =============================================================================
 -- ICONOS — TITLEBAR
--- Definidos aunque titlebars_enabled = false en rc.lua. Tenerlos declarados
--- evita warnings de beautiful si alguna regla los activa en el futuro.
+-- Declarados aunque titlebars_enabled = false en rc.lua. Evita warnings
+-- de beautiful si alguna regla los activa en el futuro.
 -- =============================================================================
 theme.titlebar_close_button_normal              = theme.default_dir .. "/titlebar/close_normal.png"
 theme.titlebar_close_button_focus               = theme.default_dir .. "/titlebar/close_focus.png"
@@ -222,32 +249,13 @@ theme.titlebar_maximized_button_normal_active   = theme.default_dir .. "/titleba
 theme.titlebar_maximized_button_focus_active    = theme.default_dir .. "/titlebar/maximized_focus_active.png"
 
 -- =============================================================================
--- TAGLIST — CONFIGURACIÓN VISUAL Y NOMBRES
--- =============================================================================
-theme.taglist_squares_sel   = gears.surface.load_from_shape(dpi(3), dpi(30), gears.shape.rectangle, theme.fg_focus)
-theme.taglist_squares_unsel = gears.surface.load_from_shape(dpi(3), dpi(30), gears.shape.rectangle, theme.bg_focus2)
-
--- Panel de fondo de la barra top
-theme.panelbg = theme.icon_dir .. "/panel.png"
-
--- Nombres de tags — números simples, más prácticos que iconos temáticos fijos.
--- Para usar iconos FontAwesome cambiar por algo como:
--- awful.util.tagnames = { "", "", "", "", "", "", "", "", "" }
-awful.util.tagnames = { "1", "2", "3", "4", "5", "6", "7", "8", "9" }
-
--- Tasklist sin iconos de app — más limpio y marginalemente más rápido de renderizar
-theme.tasklist_plain_task_name = true
-theme.tasklist_disable_icon    = true
-
--- =============================================================================
 -- WIDGETS — UTILIDADES COMPARTIDAS
 -- =============================================================================
 local markup = lain.util.markup
 
 -- =============================================================================
 -- WIDGET — RELOJ Y CALENDARIO
--- El calendario de lain se activa al hacer clic en el reloj.
--- os.setlocale se deja comentado para usar la locale del sistema directamente.
+-- Clic en el reloj despliega el calendario de lain.
 -- =============================================================================
 local mytextclock = wibox.widget.textclock(markup("#FFFFFF", "%a %d %b, %H:%M"))
 mytextclock.font  = theme.font
@@ -264,9 +272,8 @@ theme.cal = lain.widget.cal({
 
 -- =============================================================================
 -- WIDGET — BATERÍA
--- Usa iconos temáticos del theme_dir para mostrar nivel y estado de carga.
--- El tooltip muestra porcentaje y tiempo restante al pasar el mouse.
--- Esencial para laptop — no desactivar.
+-- Íconos temáticos para nivel y estado de carga.
+-- Tooltip con porcentaje y tiempo restante al pasar el mouse.
 -- =============================================================================
 local baticon    = wibox.widget.imagebox(theme.bat000)
 local battooltip = awful.tooltip({
@@ -274,12 +281,12 @@ local battooltip = awful.tooltip({
     margin_leftright = dpi(15),
     margin_topbottom = dpi(12),
 })
-battooltip.wibox.fg      = theme.fg_normal
-battooltip.textbox.font  = theme.font
-battooltip.timeout       = 0
+battooltip.wibox.fg     = theme.fg_normal
+battooltip.textbox.font = theme.font
+battooltip.timeout      = 0
 
--- [FIX-2] corner_radius y arrow_size eran variables nil no definidas.
--- gears.shape.infobubble acepta nil para usar sus valores por defecto internos.
+-- [FIX-2] corner_radius y arrow_size eran nil no definidas.
+-- Se pasan explícitamente como nil: infobubble usa sus defaults internos.
 battooltip:set_shape(function(cr, width, height)
     gears.shape.infobubble(cr, width, height, nil, nil, width - dpi(35))
 end)
@@ -289,12 +296,12 @@ local bat = lain.widget.bat({
         local index = "bat"
         local perc  = tonumber(bat_now.perc) or 0
 
-        if     perc <=   7 then index = index .. "000"
-        elseif perc <=  20 then index = index .. "020"
-        elseif perc <=  40 then index = index .. "040"
-        elseif perc <=  60 then index = index .. "060"
-        elseif perc <=  80 then index = index .. "080"
-        else                     index = index .. "100"
+        if     perc <=  7 then index = index .. "000"
+        elseif perc <= 20 then index = index .. "020"
+        elseif perc <= 40 then index = index .. "040"
+        elseif perc <= 60 then index = index .. "060"
+        elseif perc <= 80 then index = index .. "080"
+        else                    index = index .. "100"
         end
 
         if bat_now.ac_status == 1 then
@@ -308,15 +315,14 @@ local bat = lain.widget.bat({
 
 -- =============================================================================
 -- WIDGET — MPD (reproductor de música)
--- Si no usas mpd, este widget simplemente no muestra nada (estado "stop").
--- Para desactivarlo completamente: comentar este bloque completo Y la línea
--- del wibar que referencia theme.mpd.widget (~línea 452 más abajo).
--- music_dir: ajustar a la ruta de tu biblioteca musical.
+-- Si no usas mpd no muestra nada (estado "stop").
+-- Para desactivar completamente: comentar este bloque Y la línea
+-- theme.mpd.widget en s.mywibox:setup más abajo.
 -- =============================================================================
 theme.mpd = lain.widget.mpd({
-    music_dir = home .. "/Music",  -- Cambiado de ruta hardcodeada a $HOME/Music
+    music_dir = home .. "/Music",
     settings  = function()
-        -- [FIX-3] title y artist eran globales implícitas. Convertidas a locales.
+        -- [FIX-3] title y artist eran globales implícitas. Ahora son locales.
         local title, artist
 
         if mpd_now.state == "play" then
@@ -336,16 +342,16 @@ theme.mpd = lain.widget.mpd({
 
 -- =============================================================================
 -- WIDGET — VOLUMEN (ALSA vía lain.widget.alsabar)
--- Con PipeWire+PulseAudio esto funciona a través de pipewire-alsa.
--- Clic izquierdo  → abre alsamixer en terminal
--- Clic medio      → sube a 100%
--- Clic derecho    → toggle mute
--- Scroll arriba/abajo → ±1%
+-- Funciona con PipeWire a través de pipewire-alsa.
+-- Clic izq  → abre alsamixer en terminal
+-- Clic med  → sube a 100%
+-- Clic der  → toggle mute
+-- Scroll    → ±1%
 -- =============================================================================
 local volicon = wibox.widget.imagebox()
 
 theme.volume = lain.widget.alsabar({
-    -- togglechannel = "IEC958,3",  -- descomentar si se necesita canal alternativo para mute
+    -- togglechannel = "IEC958,3",
     notification_preset = { font = "Monospace 12", fg = theme.fg_normal },
     settings = function()
         local index = ""
@@ -388,18 +394,17 @@ volicon:buttons(my_table.join(
 
 -- =============================================================================
 -- WIDGET — WIFI
--- [FIX-4] Bloque comentado de forma consistente: si wificon no está en el
--- wibar, no tiene sentido ejecutar un fork de shell cada 5s para actualizarlo.
--- nm-applet en el systray ya muestra señal wifi.
+-- [FIX-4] Bloque comentado de forma consistente. nm-applet en el systray
+-- ya muestra la señal wifi sin costo de un fork de shell periódico.
 --
 -- Para reactivar:
---   1. Descomentar TODO este bloque -- [WIFI-WIDGET BEGIN] ... [WIFI-WIDGET END]
---   2. Cambiar WIFI_IFACE arriba si es necesario
---   3. En s.mywibox:setup agregar wificon y rspace0 al bloque "Right widgets"
+--   1. Descomentar TODO el bloque [WIFI-WIDGET BEGIN/END]
+--   2. Ajustar WIFI_IFACE al inicio del archivo si es necesario
+--   3. En s.mywibox:setup descomentar wificon y rspace0
 -- =============================================================================
 
 --[[ [WIFI-WIDGET BEGIN]
-local wificon    = wibox.widget.imagebox(theme.wifidisc)
+local wificon     = wibox.widget.imagebox(theme.wifidisc)
 local wifitooltip = awful.tooltip({
     objects          = { wificon },
     margin_leftright = dpi(15),
@@ -409,21 +414,20 @@ wifitooltip.wibox.fg     = theme.fg_normal
 wifitooltip.textbox.font = theme.font
 wifitooltip.timeout      = 0
 
--- [FIX-2] corner_radius y arrow_size eran nil no definidas — mismo fix que battooltip.
+-- [FIX-2] Mismo fix que battooltip.
 wifitooltip:set_shape(function(cr, width, height)
     gears.shape.infobubble(cr, width, height, nil, nil, width - dpi(120))
 end)
 
--- [OPT-3] Intervalo aumentado de 2s a 5s: la señal wifi no cambia tan rápido
--- como para justificar un fork de shell cada 2 segundos en el T430.
+-- [OPT-3] Intervalo aumentado de 2s a 5s: reduce forks de shell en el T430.
 awful.widget.watch(
     { awful.util.shell, "-c",
       string.format(
-          "awk 'NR==3 {printf(\"%%d-%%.0f\\n\",\$2, \$3*10/7)}' /proc/net/wireless; iw dev %s link",
+          "awk 'NR==3 {printf(\"%%d-%%.0f\\n\",$2,$3*10/7)}' /proc/net/wireless; iw dev %s link",
           WIFI_IFACE
       )
     },
-    5,  -- [OPT-3] era 2
+    5,
     function(_, stdout)
         local carrier, perc = stdout:match("(%d)-(%d+)")
         local tiptext = stdout:gsub("(%d)-(%d+)", ""):gsub("%s+$", "")
@@ -451,7 +455,7 @@ end)
 --]] -- [WIFI-WIDGET END]
 
 -- =============================================================================
--- WIDGET — LAUNCHER (botón del ícono de awesome en el dock)
+-- LAUNCHER (botón del ícono de awesome en el dock)
 -- =============================================================================
 local mylauncher = awful.widget.button({ image = theme.awesome_icon })
 mylauncher:connect_signal("button::press", function()
@@ -459,8 +463,8 @@ mylauncher:connect_signal("button::press", function()
 end)
 
 -- =============================================================================
--- SEPARADORES (espaciadores para el wibar y el dock)
--- [FIX-5] Variable `space` eliminada — estaba declarada pero nunca usada.
+-- SEPARADORES
+-- [FIX-5] `space` y `lspace3` eliminadas — declaradas pero nunca usadas.
 -- =============================================================================
 local rspace0 = wibox.widget.textbox()
 local rspace1 = wibox.widget.textbox()
@@ -525,7 +529,7 @@ function theme.vertical_wibox(s)
         type    = "dock",
     })
 
-    -- En setups multi-monitor, sincronizar la posición Y del dock con el primario
+    -- En setups multi-monitor: sincronizar posición Y con la pantalla primaria
     if s.index > 1 and s.myleftwibox.y == 0 then
         s.myleftwibox.y = screen[1].myleftwibox.y
     end
@@ -542,7 +546,7 @@ function theme.vertical_wibox(s)
         },
     }
 
-    -- Timer de auto-colapso: 2 segundos sin interacción → dock se estrecha
+    -- Timer de auto-colapso: 2s sin interacción → dock se estrecha
     s.docktimer = gears.timer{ timeout = 2 }
     s.docktimer:connect_signal("timeout", function()
         local focused = awful.screen.focused()
@@ -592,7 +596,7 @@ end
 -- =============================================================================
 function theme.at_screen_connect(s)
 
-    -- Quake terminal (dropdown con Mod4+`) — instancia por pantalla
+    -- Quake terminal (dropdown con Mod4+`)
     s.quake = lain.util.quake({
         app    = awful.util.terminal,
         border = theme.border_width,
@@ -606,15 +610,14 @@ function theme.at_screen_connect(s)
     end
     gears.wallpaper.maximized(wallpaper, s, true)
 
-    -- [FIX-1] Línea rota por sed: "awful.tag(awful.util.tagnames = {...}"
-    -- Restaurada a la forma correcta con 3 argumentos.
+    -- [FIX-1] Línea rota por sed restaurada con los 3 argumentos correctos.
     awful.tag(awful.util.tagnames, s, awful.layout.layouts[1])
 
-    -- Promptbox (barra de ejecución con Mod4+r)
+    -- Promptbox
     s.mypromptbox    = awful.widget.prompt()
     s.mypromptbox.bg = "#00000000"
 
-    -- Layoutbox: muestra el layout activo, clic para cambiar
+    -- Layoutbox: ícono del layout activo, clic para cambiar
     s.mylayoutbox = awful.widget.layoutbox(s)
     s.mylayoutbox:buttons(my_table.join(
         awful.button({}, 1, function() awful.layout.inc( 1) end),
@@ -628,28 +631,39 @@ function theme.at_screen_connect(s)
     -- Taglist vertical (para el dock izquierdo)
     s.mytaglist = awful.widget.taglist(s, awful.widget.taglist.filter.all,
         awful.util.taglist_buttons, {
-            font        = theme.taglist_font,
-            shape       = gears.shape.rectangle,
-            spacing     = dpi(10),
-            bg_focus    = barcolor,
+            font     = theme.taglist_font,
+            shape    = gears.shape.rectangle,
+            spacing  = dpi(10),
+            bg_focus = barcolor,
         },
         nil,
         wibox.layout.fixed.vertical()
     )
 
-    -- Tasklist: solo muestra la ventana enfocada en el tag actual
+    -- =========================================================================
+    -- TASKLIST — SOLO ÍCONOS
+    -- [OPT-5] filter.currenttags muestra todas las ventanas del tag actual,
+    -- permitiendo ver y restaurar ventanas minimizadas con clic.
+    -- fg_normal y fg_focus en #00000000 ocultan el texto dejando solo el ícono.
+    -- spacing de 4px mantiene la barra compacta.
+    -- =========================================================================
     s.mytasklist = awful.widget.tasklist(
         s,
-        awful.widget.tasklist.filter.focused,
+        awful.widget.tasklist.filter.currenttags,
         awful.util.tasklist_buttons,
-        { bg_focus = "#00000000" }
+        {
+            bg_focus  = "#00000000",
+            fg_normal = "#00000000",
+            fg_focus  = "#00000000",
+            spacing   = dpi(4),
+        }
     )
 
     -- =========================================================================
     -- BARRA TOP (wibar horizontal)
-    -- Izquierda: promptbox + espacio + tasklist de ventana activa
-    -- Centro:    reloj (clic → calendario)
-    -- Derecha:   mpd + volumen + batería + systray
+    -- Izquierda : promptbox + íconos de ventanas abiertas
+    -- Centro    : reloj (clic → calendario)
+    -- Derecha   : mpd + volumen + batería + systray (nm-applet, etc.)
     -- =========================================================================
     s.mywibox = awful.wibar({
         position = "top",
@@ -670,7 +684,7 @@ function theme.at_screen_connect(s)
         },
 
         { -- Centro
-            layout        = wibox.layout.flex.horizontal,
+            layout          = wibox.layout.flex.horizontal,
             max_widget_size = 1500,
             mytextclock,
         },
@@ -680,7 +694,7 @@ function theme.at_screen_connect(s)
             -- MPD: visible solo cuando hay reproducción activa
             wibox.widget { nil, nil, theme.mpd.widget, layout = wibox.layout.align.horizontal },
             rspace0,
-            -- Wifi desactivado: nm-applet en systray cumple la misma función.
+            -- Wifi desactivado: nm-applet en systray cumple la función.
             -- Para reactivar ver bloque [WIFI-WIDGET] arriba.
             -- wificon,
             -- rspace0,
@@ -692,8 +706,7 @@ function theme.at_screen_connect(s)
         },
     }
 
-    -- El dock vertical se crea con delayed_call para asegurarse de que
-    -- s.workarea esté disponible (se calcula después del wibar)
+    -- delayed_call asegura que s.workarea esté disponible al crear el dock
     gears.timer.delayed_call(theme.vertical_wibox, s)
 end
 
