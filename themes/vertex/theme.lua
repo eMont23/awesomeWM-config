@@ -92,7 +92,7 @@ theme.icon_dir    = theme_dir .. "/icons"
 -- FUENTES
 -- =============================================================================
 theme.font         = "Roboto Bold 10"
-theme.taglist_font = "Font Awesome 5 Free Solid 13"
+theme.taglist_font = "Font Awesome 5 Free Solid 11"
 
 -- =============================================================================
 -- COLORES
@@ -633,7 +633,7 @@ function theme.at_screen_connect(s)
         awful.util.taglist_buttons, {
             font     = theme.taglist_font,
             shape    = gears.shape.rectangle,
-            spacing  = dpi(10),
+            spacing  = dpi(6),
             bg_focus = barcolor,
         },
         nil,
